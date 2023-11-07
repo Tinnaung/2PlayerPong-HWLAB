@@ -36,6 +36,7 @@ module bgGenerator
     initial $readmemb(colors, mem2);
     
     always @(x or y) begin
-        bg_rgb <= mem2[mem[y*480+x]];
+        if(x==0 | x==639 | y==0 | y==479) bg_rgb <= 12'hFFF;
+        else bg_rgb <= mem2[mem[y*640+x]];
     end
 endmodule

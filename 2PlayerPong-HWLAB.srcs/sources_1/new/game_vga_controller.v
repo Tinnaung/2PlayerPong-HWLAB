@@ -39,28 +39,29 @@ module game_vga_controller(
 //    ballsize=5, paddlewidth=5 (multiple of 5), paddleheight=105
     localparam WIDTH = 640;
     localparam HEIGHT = 480;
-    reg [12:0] checkInScore_withrgb;
-    reg [12:0] checkInPaddle_withrgb;
-    reg [12:0] checkInBall_withrgb;
-    reg [11:0] bg_rgb;
+    wire [12:0] checkInScore_withrgb;
+    wire [12:0] checkInPaddle_withrgb;
+    wire [12:0] checkInBall_withrgb;
+    wire [11:0] bg_rgb;
     inScore ch1(x, y, scoreleft, scoreright, checkInScore_withrgb);
     inPaddle ch2(x, y, paddlelefty, paddlerighty, paddlewidth, paddleheight, checkInPaddle_withrgb);
-    inBall ch3(x, y, ballx, bally, ballradius, checkInBall_withrgb);
+    inBall ch3(x, y, ballx, bally, ballsize, checkInBall_withrgb);
     bgGenerator gen(x,y,bg_rgb);
-    always @(posedge clk) begin
-        if(p_tick == 1) begin
+    initial begin
+        rgb_reg <= 12'hAFA;
+    end
+    always @(x or y) begin
             if(checkInScore_withrgb[12]==1) begin
-                rgb_reg = checkInScore_withrgb[11:0];
+                rgb_reg <= checkInScore_withrgb[11:0];
             end
             else if(checkInPaddle_withrgb[12]==1) begin
-                rgb_reg = checkInPaddle_withrgb[11:0];
+                rgb_reg <= checkInPaddle_withrgb[11:0];
             end
             else if(checkInBall_withrgb[12]==1) begin
-                rgb_reg = checkInBall_withrgb[11:0];
+                rgb_reg <= checkInBall_withrgb[11:0];
             end
             else begin
-                rgb_reg = bg_rgb;
+                rgb_reg <= bg_rgb;
             end
-        end
     end
 endmodule

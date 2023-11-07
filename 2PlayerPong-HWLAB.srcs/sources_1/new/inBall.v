@@ -29,12 +29,12 @@ module inBall(
     output reg [12:0] checkInBall_withrgb
 );
     initial begin
-        checkInBall_withrgb[11:0] <= 12'h000;
+        checkInBall_withrgb[11:0] <= 12'hFFF;
     end
     always @(x or y) begin
         checkInBall_withrgb[12]<=0;
-        if(x>=ballx-(ballsize-1)/2 & x<=ballx-(ballsize-1)/2 
-            & y>=bally-(ballsize-1)/2 & y<=bally-(ballsize-1)/2)
-            checkInBall_withrgb<=1;
+        if(x>=ballx-(ballsize-1)/2 & x<=ballx+(ballsize-1)/2 
+            & y>=bally-(ballsize-1)/2 & y<=bally+(ballsize-1)/2)
+            checkInBall_withrgb[12]<=1;
     end
 endmodule
