@@ -28,12 +28,15 @@ module GameController(
     input wire reset,
     input wire clk,
     input wire [9:0] pix_x,pix_y,
-    output reg ball_X,
-    output reg ball_y,
-    output reg P1_y,
-    output reg P2_y,
-    output reg[6:0] P1_score,
-    output reg[6:0] P2_score
+    output wire [9:0] ball_x,
+    output wire [9:0] ball_y,
+    output wire [9:0] P1_y,
+    output wire [9:0] P2_y,
+    output reg [6:0] P1_score,
+    output reg [6:0] P2_score,
+    output wire [3:0] ballsize,
+    output wire [3:0] paddlewidth,
+    output wire [6:0] paddleheight
     );
     
     //state declaration
@@ -54,9 +57,13 @@ module GameController(
     reg timer_start;
     assign timer_tick = (pix_x == 0) && (pix_y==0);
     timer myTimer (clk,reset,timer_tick,timer_start,timer_up);
-    
+    //set output
+    wire [9:0] ballx,bally,p1y,p2y;
+    wire [3:0] ball_size,paddle_width;
+    wire [6:0] paddle_height;
     //call
-    GameLogic graphic(P1_up,P1_down,P2_up,P2_down,reset,clk,pix_x,pix_y,gra_still,P1_hit,P2_hit,miss);
+    GameLogic graphic(P1_up,P1_down,P2_up,P2_down,reset,clk,pix_x
+    ,pix_y,gra_still,P1_hit,P2_hit,miss,ballx,bally,P1y,P2y,ball_size,paddle_width,paddle_height);
     //state management
     always @(posedge clk, posedge reset)
         if(reset)
@@ -112,6 +119,12 @@ module GameController(
         endcase
     end
             
-                    
+    assign ball_x = ballx;
+    assign ball_y = bally;
+    assign P1_y = p1y;
+    assign P2_y = p2y;
+    assign paddlewidth = paddle_width;
+    assign paddleheight = paddle_height;
+    assign ballsize = ball_size;
                 
 endmodule

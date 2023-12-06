@@ -31,7 +31,14 @@ module GameLogic(
     input wire gra_still,//if in playing state = 0
     output reg P1_hit,
     output reg P2_hit,
-    output reg miss
+    output reg miss,
+    output reg [9:0] ballx,
+    output reg [9:0] bally,
+    output reg [9:0] paddleP1y,
+    output reg [9:0] paddleP2y,
+    output reg [3:0] ballsize,
+    output reg [3:0] paddlewidth,
+    output reg [6:0] paddleheight
     );
     
     //initiate screen
@@ -42,17 +49,17 @@ module GameLogic(
     wire refresh;
     
     //initiate paddle
-    localparam paddle_height = 10;
+    localparam paddle_height = 115;
     localparam paddle_delta = 4;
     //P1
     localparam P1_x_left = 32;
-    localparam P1_x_right = 35;
+    localparam P1_x_right = 37;
     wire [9:0] P1_y_top,P1_y_bottom;
     reg [9:0] P1_y_reg,P1_y_next; //track top y 
     wire P1_on;
     //P2
     localparam P2_x_left = 600;
-    localparam P2_x_right = 603;
+    localparam P2_x_right = 605;
     wire [9:0] P2_y_top,P2_y_bottom;
     reg [9:0] P2_y_reg,P2_y_next; //track top y 
     wire P2_on;
@@ -64,7 +71,7 @@ module GameLogic(
     wire [9:0] ball_y_top,ball_y_bottom;
     reg [9:0] ball_x_reg, ball_y_reg; // track left-top of the ball
     wire [9:0] ball_x_next, ball_y_next;
-    reg [9:0] ball_y_center;
+    reg [9:0] ball_y_center,ball_x_center;
     //the distance that the ball will move
     reg [9:0] delta_x_ball,delta_y_ball;
     reg [9:0] delta_x_ball_next,delta_y_ball_next;
@@ -80,6 +87,17 @@ module GameLogic(
     wire ball_display;
     wire pix_ball_on; //each pixel is on
     
+    
+    //assign localparam
+    initial begin
+        ballsize = BALL_SIZE;
+        paddlewidth = 5;
+        paddleheight = paddle_height;
+        ballx =( ball_x_right + ball_x_left ) /2;
+        bally = ( ball_y_top + ball_y_bottom ) /2;
+        paddleP1y = (P1_y_top + P1_y_bottom)/2;
+        paddleP2y = (P2_y_top + P2_y_bottom)/2;
+    end
     
     
     
@@ -121,6 +139,7 @@ module GameLogic(
     assign ball_y_top = ball_y_reg;
     assign ball_x_right = ball_x_left + BALL_SIZE -1;
     assign ball_y_bottom = ball_y_top + BALL_SIZE -1;
+    
     //pixel 
     //display if in screen
     assign ball_display = (ball_x_left <= pix_x) && (pix_x <= ball_x_right) && (ball_y_top <= pix_y) && (pix_y <= ball_y_bottom);
@@ -134,10 +153,10 @@ module GameLogic(
     
     
     //set ball position
-    assign ball_x_next = (gra_still) ? screen_WIDTH/2: //init the ball at center
+    assign ball_x_next = (!gra_still) ? screen_WIDTH/2: //init the ball at center
                          (refresh) ? ball_x_reg + delta_x_ball: 
                          ball_x_reg;
-    assign ball_y_next = (gra_still) ? screen_HEIGHT/2:
+    assign ball_y_next = (!gra_still) ? screen_HEIGHT/2:
                          (refresh) ? ball_y_reg + delta_y_ball:
                          ball_y_reg;
     
@@ -151,6 +170,7 @@ module GameLogic(
         direct_y_ball = delta_y_ball;
         
         ball_y_center =( ball_y_top + ball_y_bottom ) /2;
+        ball_x_center =( ball_x_right + ball_x_left ) /2;
         
         if (gra_still) //in playing state
             begin
