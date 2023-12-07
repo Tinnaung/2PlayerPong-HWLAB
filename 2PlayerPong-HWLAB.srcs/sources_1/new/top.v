@@ -36,38 +36,60 @@ module top(
     wire [9:0] x,y;
     wire [9:0] ball_x,ball_y,P1_y,P2_y;
     wire [6:0] P1_score,P2_score;
-    wire [3:0] ballsize;
-    wire [3:0] paddlewidth;
-    wire [6:0] paddleheight;
+//    wire [3:0] ballsize;
+//    wire [3:0] paddlewidth;
+//    wire [6:0] paddleheight;
     
     wire [11:0] rgb_reg;
 	wire p_tick;
 	// video status output from vga_sync to tell when to route out rgb signal to DAC
 	wire video_on;
+	wire [9:0] ballx;
+    wire [9:0] bally;
+    wire [9:0] paddlelefty;
+    wire [9:0] paddlerighty;
+    reg [6:0] scoreleft;
+    reg [6:0] scoreright;
+    reg [3:0] ballsize;
+    reg [3:0] paddlewidth;
+    reg [6:0] paddleheight;
+    wire vga_reset;
+    
+    assign vga_reset = 1'b0;
+    
+    initial begin
+
+        ballsize = 8;
+        paddlewidth = 5;
+        paddleheight = 72;
+    end
+	always @* begin
+	   scoreleft = P1_score;
+	   scoreright = P2_score;
+	end
 	
     InputController inputControl (.clk(clk),.PS2Data(PS2Data),.PS2Clk(PS2Clk),.w(w),.s(s),.up(up),.down(down));
     //
-    GameController gameControl (w,s,up,down,reset,clk,x,y,ball_x,ball_y,
-                                    P1_y,P2_y,P1_score,P2_score,ballsize,paddlewidth,
-                                    paddleheight);
+    GameController gameControl (w,s,up,down,reset,clk,x,y,ballx,bally,
+                                    paddlelefty,paddlerighty,P1_score,P2_score);
     //
-    vga_sync vga_sync_unit (.clk(clk), .reset(reset), .hsync(hsync), .vsync(vsync),
+    vga_sync vga_sync_unit (.clk(clk), .reset(vga_reset), .hsync(hsync), .vsync(vsync),
                                 .video_on(video_on), .p_tick(p_tick), .x(x), .y(y));
     game_vga_controller controller( x,
-                                    y,
-                                    ball_x,
-                                    ball_y,
-                                    15,
-                                    P1_y,
-                                    P2_y,
-                                    5,
-                                    115,
-                                    P1_score,
-                                    P2_score,
-                                    rgb_reg,
-                                    p_tick,
-                                    clk
-                                    );
+                                        y,
+                                        ballx,
+                                        bally,
+                                        ballsize,
+                                        paddlelefty,
+                                        paddlerighty,
+                                        paddlewidth,
+                                        paddleheight,
+                                        P1_score,
+                                        P2_score,
+                                        rgb_reg,
+                                        p_tick,
+                                        clk
+                                       );
        // output
         assign rgb = (video_on) ? rgb_reg : 12'b0;
         

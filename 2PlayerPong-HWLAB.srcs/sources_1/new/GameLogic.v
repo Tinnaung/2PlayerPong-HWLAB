@@ -35,10 +35,7 @@ module GameLogic(
     output reg [9:0] ballx,
     output reg [9:0] bally,
     output reg [9:0] paddleP1y,
-    output reg [9:0] paddleP2y,
-    output reg [3:0] ballsize,
-    output reg [3:0] paddlewidth,
-    output reg [6:0] paddleheight
+    output reg [9:0] paddleP2y
     );
     
     //initiate screen
@@ -49,20 +46,22 @@ module GameLogic(
     wire refresh;
     
     //initiate paddle
-    localparam paddle_height = 115;
+    localparam paddle_height = 72;
     localparam paddle_delta = 4;
     //P1
-    localparam P1_x_left = 32;
-    localparam P1_x_right = 37;
+    localparam P1_x_left = 61;
+    localparam P1_x_right = 65;
     wire [9:0] P1_y_top,P1_y_bottom;
     reg [9:0] P1_y_reg,P1_y_next; //track top y 
     wire P1_on;
     //P2
-    localparam P2_x_left = 600;
-    localparam P2_x_right = 605;
+    localparam P2_x_left = 574;
+    localparam P2_x_right = 578;
     wire [9:0] P2_y_top,P2_y_bottom;
     reg [9:0] P2_y_reg,P2_y_next; //track top y 
     wire P2_on;
+    //paddle counter
+    reg [18:0] counter = 0;
     
     //initiate ball
     localparam BALL_SIZE = 8; //size 8*8
@@ -89,16 +88,24 @@ module GameLogic(
     
     
     //assign localparam
-    initial begin
-        ballsize = BALL_SIZE;
-        paddlewidth = 5;
-        paddleheight = paddle_height;
-        ballx =( ball_x_right + ball_x_left ) /2;
-        bally = ( ball_y_top + ball_y_bottom ) /2;
-        paddleP1y = (P1_y_top + P1_y_bottom)/2;
-        paddleP2y = (P2_y_top + P2_y_bottom)/2;
+    always @* begin
+       ballx =( ball_x_right + ball_x_left ) /2;
+       bally = ( ball_y_top + ball_y_bottom ) /2;
+       paddleP1y = (P1_y_top + P1_y_bottom)/2;
+       paddleP2y = (P2_y_top + P2_y_bottom)/2;
+   end 
+   
+   
+   always @(posedge refresh) begin
+        if(reset==1'b1 || (counter==0)) begin
+            counter <= 7'b111_1111;
+        end
+        else begin
+            counter <= counter - 1;
+        end
     end
     
+   
     
     
     //rounded the ball
@@ -117,9 +124,11 @@ module GameLogic(
     //setup ???
     //ball control
     //ball position state
-    always @(posedge clk, posedge reset)
+    always @*
         if (reset)
             begin
+               P1_y_reg <= 240;
+               P2_y_reg <= 240;
                ball_x_reg <= 0;
                ball_y_reg <= 0;
                delta_x_ball <= 10'h0004; //move for four
@@ -127,13 +136,15 @@ module GameLogic(
             end
         else 
             begin
+                P1_y_reg <= P1_y_next;
+                P2_y_reg <= P2_y_next;
                 ball_x_reg <= ball_x_next;
                 ball_y_reg <= ball_y_next;
                 delta_x_ball <= delta_x_ball_next;
                 delta_y_ball <= delta_y_ball_next;
             end
             
-    assign refresh = (pix_y == 481) && (pix_x==0);
+    assign refresh = (pix_y == 481) && (pix_x==0)? 1:0;
     //setup
     assign ball_x_left = ball_x_reg;
     assign ball_y_top = ball_y_reg;
@@ -153,10 +164,10 @@ module GameLogic(
     
     
     //set ball position
-    assign ball_x_next = (!gra_still) ? screen_WIDTH/2: //init the ball at center
+    assign ball_x_next = (gra_still) ? screen_WIDTH/2: //init the ball at center
                          (refresh) ? ball_x_reg + delta_x_ball: 
                          ball_x_reg;
-    assign ball_y_next = (!gra_still) ? screen_HEIGHT/2:
+    assign ball_y_next = (gra_still) ? screen_HEIGHT/2:
                          (refresh) ? ball_y_reg + delta_y_ball:
                          ball_y_reg;
     
@@ -241,31 +252,35 @@ module GameLogic(
     //P1 paddle
     assign P1_y_top = P1_y_reg;
     assign P1_y_bottom = P1_y_top - paddle_height -1;
+    assign P2_y_top = P2_y_reg;
+    assign P2_y_bottom = P2_y_top - paddle_height -1;
     //pixel
     assign P1_on = ((P1_x_left <= pix_x) && (pix_x <= P1_x_right) &&
                    (P1_y_top <= pix_y) && (pix_y <= P1_y_bottom));
+    assign P2_on = ((P2_x_left <= pix_x) && (pix_x <= P2_x_right) &&
+                   (P2_y_top <= pix_y) && (pix_y <= P2_y_bottom));
     //paddle control P1
     always @*
     begin
         //default
         P1_y_next = P1_y_reg;
-        P2_y_next = P2_y_reg;
-        if (gra_still) //init at the center height
-            begin
-            P1_y_next = (screen_HEIGHT - paddle_height)/2;
-            P2_y_next = (screen_HEIGHT - paddle_height)/2;
-            end
-        else if (refresh)
-            if(P1_up && (P1_y_top <= screen_HEIGHT - 1))
-                P1_y_next = P1_y_reg + paddle_delta;
-            else if (P1_down && (P1_y_bottom >= 1))
-                P1_y_next = P1_y_reg - paddle_delta;
-            else if (P2_up && (P1_y_top <= screen_HEIGHT - 1))
-                P2_y_next = P2_y_reg + paddle_delta;
-            else if (P2_down && (P2_y_bottom >= 1))
-                P2_y_next = P2_y_reg - paddle_delta;
+        P2_y_next = P2_y_reg;    
+            if (gra_still) //init at the center height
+                begin
+                P1_y_next = 240;
+                P2_y_next = 240;
+                end
+            if(refresh)
+                if(P1_up && (P1_y_top > paddle_delta))
+                    P1_y_next <= P1_y_reg - paddle_delta;
+                else if (P1_down && (P1_y_bottom <= screen_HEIGHT - paddle_delta ))
+                    P1_y_next <= P1_y_reg + paddle_delta;
+                if (P2_up && (P2_y_top > paddle_delta))
+                    P2_y_next <= P2_y_reg - paddle_delta;
+                else if (P2_down && (P2_y_bottom <= screen_HEIGHT - paddle_delta ))
+                    P2_y_next <= P2_y_reg + paddle_delta;
+        
     end
-   
             
             
             

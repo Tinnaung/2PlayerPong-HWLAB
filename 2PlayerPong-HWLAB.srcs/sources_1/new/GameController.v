@@ -33,10 +33,7 @@ module GameController(
     output wire [9:0] P1_y,
     output wire [9:0] P2_y,
     output reg [6:0] P1_score,
-    output reg [6:0] P2_score,
-    output wire [3:0] ballsize,
-    output wire [3:0] paddlewidth,
-    output wire [6:0] paddleheight
+    output reg [6:0] P2_score
     );
     
     //state declaration
@@ -57,13 +54,9 @@ module GameController(
     reg timer_start;
     assign timer_tick = (pix_x == 0) && (pix_y==0);
     timer myTimer (clk,reset,timer_tick,timer_start,timer_up);
-    //set output
-    wire [9:0] ballx,bally,p1y,p2y;
-    wire [3:0] ball_size,paddle_width;
-    wire [6:0] paddle_height;
     //call
     GameLogic graphic(P1_up,P1_down,P2_up,P2_down,reset,clk,pix_x
-    ,pix_y,gra_still,P1_hit,P2_hit,miss,ballx,bally,P1y,P2y,ball_size,paddle_width,paddle_height);
+    ,pix_y,gra_still,P1_hit,P2_hit,miss,ball_x,ball_y,P1_y,P2_y);
     //state management
     always @(posedge clk, posedge reset)
         if(reset)
@@ -84,6 +77,7 @@ module GameController(
         case (present_state)
             newgame:
                 begin
+                    gra_still = 1'b1;
                     if((P1_up != 0) || (P1_down != 0) || (P2_up != 0) || (P2_down != 0))
                         begin next_state = playing; end 
                 end
@@ -110,21 +104,20 @@ module GameController(
                 end
            newball:
             //set timer 2 sec
+            begin
+             gra_still = 1'b1;
             if(timer_up && ((P1_up != 0) || (P1_down != 0) || (P2_up != 0) || (P2_down != 0))) begin
                 next_state = playing; end
+            end
            gameover :
            //set timer 2 sec
+           begin
+            gra_still = 1'b1;
             if(timer_up)
                 begin next_state = newgame; end
+           end
         endcase
     end
-            
-    assign ball_x = ballx;
-    assign ball_y = bally;
-    assign P1_y = p1y;
-    assign P2_y = p2y;
-    assign paddlewidth = paddle_width;
-    assign paddleheight = paddle_height;
-    assign ballsize = ball_size;
+           
                 
 endmodule
