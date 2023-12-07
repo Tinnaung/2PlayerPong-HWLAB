@@ -124,13 +124,13 @@ module GameLogic(
     //setup ???
     //ball control
     //ball position state
-    always @*
+    always @(posedge clk or posedge reset)
         if (reset)
             begin
                P1_y_reg <= 240;
                P2_y_reg <= 240;
-               ball_x_reg <= 0;
-               ball_y_reg <= 0;
+               ball_x_reg <= 319;
+               ball_y_reg <= 239;
                delta_x_ball <= 10'h0004; //move for four
                delta_y_ball <= 10'h0004;
             end
@@ -264,23 +264,20 @@ module GameLogic(
     begin
         //default
         P1_y_next = P1_y_reg;
-        P2_y_next = P2_y_reg;    
-            if (gra_still) //init at the center height
-                begin
-                P1_y_next = 240;
-                P2_y_next = 240;
-                end
-            if(refresh)
-                if(P1_up && (P1_y_top > paddle_delta))
+        P2_y_next = P2_y_reg;
+            if(refresh) begin
+                if(P1_up && (P1_y_top > paddle_delta +paddle_height))
                     P1_y_next <= P1_y_reg - paddle_delta;
-                else if (P1_down && (P1_y_bottom <= screen_HEIGHT - paddle_delta ))
+                else if (P1_down && (P1_y_bottom <= screen_HEIGHT - paddle_delta - paddle_height))
                     P1_y_next <= P1_y_reg + paddle_delta;
-                if (P2_up && (P2_y_top > paddle_delta))
+                if (P2_up && (P2_y_top > paddle_delta+paddle_height))
                     P2_y_next <= P2_y_reg - paddle_delta;
-                else if (P2_down && (P2_y_bottom <= screen_HEIGHT - paddle_delta ))
+                else if (P2_down && (P2_y_bottom <= screen_HEIGHT - paddle_delta - paddle_height ))
                     P2_y_next <= P2_y_reg + paddle_delta;
-        
+          end
     end
+    
+    
             
             
             
