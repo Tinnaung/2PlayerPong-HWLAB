@@ -129,9 +129,9 @@ module GameLogic(
             begin
                P1_y_reg <= 240;
                P2_y_reg <= 240;
-               ball_x_reg <= 319;
-               ball_y_reg <= 239;
-               delta_x_ball <= 10'h002; //move for four
+               ball_x_reg <= 0;
+               ball_y_reg <= 0;
+               delta_x_ball <= 10'h002; //move for 2
                delta_y_ball <= 10'h002;
             end
         else 
@@ -140,8 +140,8 @@ module GameLogic(
                 P2_y_reg <= P2_y_next;
                 ball_x_reg <= ball_x_next;
                 ball_y_reg <= ball_y_next;
-                delta_x_ball <= delta_x_ball_next;
-                delta_y_ball <= delta_y_ball_next;
+                delta_x_ball <= direct_x_ball;
+                delta_y_ball <= direct_y_ball;
             end
             
     assign refresh = (pix_y == 481) && (pix_x==0)? 1:0;
@@ -164,11 +164,11 @@ module GameLogic(
     
     
     //set ball position
-    assign ball_x_next = (gra_still == 1) ? screen_WIDTH/2: //init the ball at center
-                          ball_x_reg + delta_x_ball; 
+    assign ball_x_next = (gra_still) ? 319: //init the ball at center
+                          (refresh)? ball_x_reg + delta_x_ball: ball_x_reg; 
                         
-    assign ball_y_next = (gra_still == 1) ? screen_HEIGHT/2:
-                          ball_y_reg + delta_y_ball;
+    assign ball_y_next = (gra_still) ? 239:
+                          (refresh)? ball_y_reg + delta_y_ball: ball_y_reg;
     
     //collision
     always @*
@@ -179,29 +179,35 @@ module GameLogic(
         direct_x_ball = delta_x_ball;
         direct_y_ball = delta_y_ball;
         
-        ball_y_center =( ball_y_top + ball_y_bottom ) /2;
-        ball_x_center =( ball_x_right + ball_x_left ) /2;
+//        ball_y_center =( ball_y_top + ball_y_bottom ) /2;
+//        ball_x_center =( ball_x_right + ball_x_left ) /2;
         
-        if (gra_still == 0) //in playing state
+        if (gra_still) //in playing state
             begin
                 direct_x_ball = BALL_V_N;
                 direct_y_ball = BALL_V_P;
             end
          //check top and bottom
-         else if (ball_y_top <= 1) //reach top screen
+         else if (ball_y_top < 1) //reach top screen
             direct_y_ball = BALL_V_P;
-         else if (ball_y_bottom >= screen_HEIGHT - 1) //reach bottom screen
+         else if (ball_y_bottom > screen_HEIGHT) //reach bottom screen
             direct_y_ball = BALL_V_N;
         //check colliosion
+        else if((P1_x_right >= ball_x_left) && (ball_x_left >= P1_x_left) &&
+                (P1_y_top <= ball_y_bottom) && (ball_y_top <= P1_y_bottom))       // collide with paddle 1
+            direct_x_ball = 4;                           // move right
+        else if((P2_x_left <= ball_x_right) && (ball_x_right <= P2_x_right) &&
+                (P2_y_top <= ball_y_bottom) && (ball_y_top <= P2_y_bottom))       // collide with paddle 2
+            direct_x_ball = -4;  
         //P1
-         else if ( (ball_x_left <= P1_x_right) && (P1_x_left <= ball_x_left) && 
-            ((ball_y_bottom >= P1_y_top) && (P1_y_bottom >= ball_y_bottom) || 
-            (ball_y_top >= P1_y_top) && (P1_y_bottom >= ball_y_top )) )
+         else if ( (P1_x_right >= ball_x_left) && (ball_x_left >= P1_x_left) &&
+                (P1_y_top <= ball_y_bottom) && (ball_y_top <= P1_y_bottom))
             begin
-            if ( (ball_y_top >= P1_y_top) && (P1_y_bottom >= ball_y_top ) ) 
-                hitpoint =  P1_y_bottom - ball_y_top ;
-            else
-                hitpoint = ball_y_bottom - P1_y_top;
+            hitpoint = bally - P1_y_top;
+//            if ( (ball_y_top >= P1_y_top) && (P1_y_bottom >= ball_y_top ) ) 
+//                hitpoint =  P1_y_bottom - ball_y_top ;
+//            else
+//                hitpoint = ball_y_bottom - P1_y_top;
            
            if (hitpoint < (paddle_height / 5))
                 direct_x_ball = 4;
@@ -215,15 +221,14 @@ module GameLogic(
                 direct_x_ball = 4;
              end
          //P2
-         else if ( (ball_x_right >= P2_x_left) && (P2_x_right >= ball_x_right) && 
-            ((ball_y_bottom >= P2_y_top) && (P2_y_bottom >= ball_y_bottom) || 
-            (ball_y_top >= P2_y_top) && (P2_y_bottom >= ball_y_top )) )
+         else if ( (P2_x_left <= ball_x_right) && (ball_x_right <= P2_x_right) &&
+                (P2_y_top <= ball_y_bottom) && (ball_y_top <= P2_y_bottom))
             begin
-            if ( (ball_y_top >= P1_y_top) && (P1_y_bottom >= ball_y_top ) ) 
-                hitpoint = P2_y_bottom - ball_y_top;
-            else
-                hitpoint = ball_y_bottom - P2_y_top;
-           
+//            if ( (ball_y_top >= P1_y_top) && (P1_y_bottom >= ball_y_top ) ) 
+//                hitpoint = P2_y_bottom - ball_y_top;
+//            else
+//                hitpoint = ball_y_bottom - P2_y_top;
+           hitpoint = bally - P1_y_top;
            if (hitpoint < (paddle_height / 5))
                 direct_x_ball = -4;
            else if (hitpoint < 2*(paddle_height / 5))

@@ -46,7 +46,7 @@ module game_vga_controller(
     inScore ch1(x, y, scoreleft, scoreright, checkInScore_withrgb);
     inPaddle ch2(x, y, paddlelefty, paddlerighty, paddlewidth, paddleheight, checkInPaddle_withrgb);
     inBall ch3(x, y, ballx, bally, ballsize, checkInBall_withrgb);
-    bgGenerator gen(x,y,bg_rgb);
+//    bgGenerator gen(x,y,bg_rgb);
     initial begin
         rgb_reg <= 12'hAFA;
     end
@@ -61,7 +61,7 @@ module game_vga_controller(
                 rgb_reg <= checkInBall_withrgb[11:0];
             end
             else begin
-                rgb_reg <= bg_rgb;
+                rgb_reg <= 12'hAFA;
             end
     end
 endmodule

@@ -34,7 +34,8 @@ module GameController(
     output wire [9:0] P2_y,
     output reg [6:0] P1_score,
     output reg [6:0] P2_score,
-    output reg gra_still
+    output reg gra_still,
+    output reg present_state
     );
     
     //state declaration
@@ -45,16 +46,19 @@ module GameController(
     gameover = 2'b11; //if there's a player whose score has reach 99
     
     //signal
-    reg[1:0] present_state,next_state;
+    reg[1:0] next_state;
 //    reg gra_still;
     wire P1_hit;
     wire P2_hit;
     wire miss;
+    reg inc1,inc2;
     //timer set
     wire timer_tick,timer_up;
     reg timer_start;
     assign timer_tick = (pix_x == 0) && (pix_y==0);
     timer myTimer (clk,reset,timer_tick,timer_start,timer_up);
+    
+    
     //call
     GameLogic graphic(P1_up,P1_down,P2_up,P2_down,reset,clk,pix_x
     ,pix_y,gra_still,P1_hit,P2_hit,miss,ball_x,ball_y,P1_y,P2_y);
@@ -62,25 +66,38 @@ module GameController(
     always @(posedge clk, posedge reset)
         if(reset)
             begin 
-                present_state <= newgame;
+                present_state = newgame;
             end
         else
             begin
-                present_state <= next_state;
+                present_state = next_state;
             end
     //next state assigned
+    initial begin
+        P1_score = 0;
+        P2_score = 0;
+    end
+    always @(posedge inc1) begin
+        P1_score = P1_score + 1;
+    end
+    
+    always @(posedge inc2) begin
+        P2_score = P2_score + 1;
+    end
     always @*
     begin
         next_state = present_state; //default
         gra_still = 1'b1; //animate the screen or not set to not by default
-        P1_score = 0;
-        P2_score = 0;
+        inc1 = 1'b0;
+        inc2 = 1'b0;
         case (present_state)
             newgame:
                 begin
                     gra_still = 1'b1;
-                    if((P1_up != 0) || (P1_down != 0) || (P2_up != 0) || (P2_down != 0))
-                        begin next_state = playing; end 
+                    if((P1_up == 1) || (P1_down == 1) || (P2_up == 1) || (P2_down == 1))
+                        begin 
+                        next_state = playing; 
+                        end 
                 end
             playing:
                 begin
@@ -88,19 +105,19 @@ module GameController(
                     timer_start = 1'b0;
                     if(P1_hit)
                         begin 
-                            P1_score = P1_score + 1;
+                            inc1 = 1'b1; 
                             if(P1_score == 99) begin
                                 next_state = gameover;
                             end
                         end
                     else if (P2_hit)
                         begin 
-                            P2_score = P2_score + 1; 
+                            inc2 = 1'b1; 
                             if(P2_score == 99) begin
                                 next_state = gameover;
                             end
                         end
-                    else if (miss) //no one reach 99 yet
+                    if (miss) //no one reach 99 yet
                         begin next_state = newball; end
                 end
            newball:
