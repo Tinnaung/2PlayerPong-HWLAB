@@ -61,7 +61,7 @@ module GameLogic(
     reg [9:0] P2_y_reg,P2_y_next; //track top y 
     wire P2_on;
     //paddle counter
-    reg [18:0] counter = 0;
+//    reg [18:0] counter = 0;
     
     //initiate ball
     localparam BALL_SIZE = 8; //size 8*8
@@ -96,14 +96,14 @@ module GameLogic(
    end 
    
    
-   always @(posedge refresh) begin
-        if(reset==1'b1 || (counter==0)) begin
-            counter <= 7'b111_1111;
-        end
-        else begin
-            counter <= counter - 1;
-        end
-    end
+//   always @(posedge refresh) begin
+//        if(reset==1'b1 || (counter==0)) begin
+//            counter <= 7'b111_1111;
+//        end
+//        else begin
+//            counter <= counter - 1;
+//        end
+//    end
     
    
     
@@ -131,8 +131,8 @@ module GameLogic(
                P2_y_reg <= 240;
                ball_x_reg <= 319;
                ball_y_reg <= 239;
-               delta_x_ball <= 10'h0004; //move for four
-               delta_y_ball <= 10'h0004;
+               delta_x_ball <= 10'h002; //move for four
+               delta_y_ball <= 10'h002;
             end
         else 
             begin
@@ -164,12 +164,11 @@ module GameLogic(
     
     
     //set ball position
-    assign ball_x_next = (gra_still) ? screen_WIDTH/2: //init the ball at center
-                         (refresh) ? ball_x_reg + delta_x_ball: 
-                         ball_x_reg;
-    assign ball_y_next = (gra_still) ? screen_HEIGHT/2:
-                         (refresh) ? ball_y_reg + delta_y_ball:
-                         ball_y_reg;
+    assign ball_x_next = (gra_still == 1) ? screen_WIDTH/2: //init the ball at center
+                          ball_x_reg + delta_x_ball; 
+                        
+    assign ball_y_next = (gra_still == 1) ? screen_HEIGHT/2:
+                          ball_y_reg + delta_y_ball;
     
     //collision
     always @*
@@ -183,26 +182,26 @@ module GameLogic(
         ball_y_center =( ball_y_top + ball_y_bottom ) /2;
         ball_x_center =( ball_x_right + ball_x_left ) /2;
         
-        if (gra_still) //in playing state
+        if (gra_still == 0) //in playing state
             begin
                 direct_x_ball = BALL_V_N;
                 direct_y_ball = BALL_V_P;
             end
          //check top and bottom
-         else if (ball_y_top >= screen_HEIGHT-1) //reach top screen
-            direct_y_ball = BALL_V_N;
-         else if (ball_y_bottom <= 1) //reach bottom screen
+         else if (ball_y_top <= 1) //reach top screen
             direct_y_ball = BALL_V_P;
+         else if (ball_y_bottom >= screen_HEIGHT - 1) //reach bottom screen
+            direct_y_ball = BALL_V_N;
         //check colliosion
         //P1
          else if ( (ball_x_left <= P1_x_right) && (P1_x_left <= ball_x_left) && 
-            ((ball_y_bottom <= P1_y_top) && (P1_y_bottom <= ball_y_bottom) || 
-            (ball_y_top <= P1_y_top) && (P1_y_bottom <= ball_y_top )) )
+            ((ball_y_bottom >= P1_y_top) && (P1_y_bottom >= ball_y_bottom) || 
+            (ball_y_top >= P1_y_top) && (P1_y_bottom >= ball_y_top )) )
             begin
-            if ( (ball_y_top <= P1_y_top) && (P1_y_bottom <= ball_y_top ) ) 
-                hitpoint = ball_y_top - P1_y_bottom;
+            if ( (ball_y_top >= P1_y_top) && (P1_y_bottom >= ball_y_top ) ) 
+                hitpoint =  P1_y_bottom - ball_y_top ;
             else
-                hitpoint = P1_y_top - ball_y_bottom;
+                hitpoint = ball_y_bottom - P1_y_top;
            
            if (hitpoint < (paddle_height / 5))
                 direct_x_ball = 4;
@@ -217,13 +216,13 @@ module GameLogic(
              end
          //P2
          else if ( (ball_x_right >= P2_x_left) && (P2_x_right >= ball_x_right) && 
-            ((ball_y_bottom <= P2_y_top) && (P2_y_bottom <= ball_y_bottom) || 
-            (ball_y_top <= P2_y_top) && (P2_y_bottom <= ball_y_top )) )
+            ((ball_y_bottom >= P2_y_top) && (P2_y_bottom >= ball_y_bottom) || 
+            (ball_y_top >= P2_y_top) && (P2_y_bottom >= ball_y_top )) )
             begin
-            if ( (ball_y_top <= P1_y_top) && (P1_y_bottom <= ball_y_top ) ) 
-                hitpoint = ball_y_top - P2_y_bottom;
+            if ( (ball_y_top >= P1_y_top) && (P1_y_bottom >= ball_y_top ) ) 
+                hitpoint = P2_y_bottom - ball_y_top;
             else
-                hitpoint = P2_y_top - ball_y_bottom;
+                hitpoint = ball_y_bottom - P2_y_top;
            
            if (hitpoint < (paddle_height / 5))
                 direct_x_ball = -4;

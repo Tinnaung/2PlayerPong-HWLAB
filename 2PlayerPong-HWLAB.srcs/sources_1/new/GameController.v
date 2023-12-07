@@ -33,7 +33,8 @@ module GameController(
     output wire [9:0] P1_y,
     output wire [9:0] P2_y,
     output reg [6:0] P1_score,
-    output reg [6:0] P2_score
+    output reg [6:0] P2_score,
+    output reg gra_still
     );
     
     //state declaration
@@ -45,7 +46,7 @@ module GameController(
     
     //signal
     reg[1:0] present_state,next_state;
-    reg gra_still;
+//    reg gra_still;
     wire P1_hit;
     wire P2_hit;
     wire miss;
