@@ -85,6 +85,7 @@ module GameLogic(
     //display
     wire ball_display;
     wire pix_ball_on; //each pixel is on
+    reg lastHit; //if 1 = lastime P1_hit
     
     
     //assign localparam
@@ -129,10 +130,15 @@ module GameLogic(
             begin
                P1_y_reg <= 204;
                P2_y_reg <= 204;
-               ball_x_reg <= 0;
-               ball_y_reg <= 0;
-               delta_x_ball <= 2; //move for 2
-               delta_y_ball <= 0;
+               ball_x_reg <= 319;
+               ball_y_reg <= 239;
+               if(lastHit == 1)begin delta_x_ball <= -2; end
+               else begin  delta_x_ball <= 2; end
+                //move for 2
+               delta_y_ball <= 2;
+               /*P1_hit <= 1'b0;
+               P2_hit <= 1'b0;
+               miss <= 1'b0;*/
             end
         else 
             begin
@@ -169,9 +175,10 @@ module GameLogic(
                         
     assign ball_y_next = (gra_still) ? 239:
                           (refresh)? ball_y_reg + delta_y_ball: ball_y_reg;
+                          
     
     //collision
-    always @*
+    always @(posedge clk)
     begin
         direct_x_ball = delta_x_ball;
         direct_y_ball = delta_y_ball;
@@ -181,22 +188,27 @@ module GameLogic(
         
         if (gra_still) //in playing state
             begin
-                direct_x_ball = 2;
-                direct_y_ball = 0;
-                P1_hit = 1'b0;
-                P2_hit = 1'b0;
-                miss = 1'b0;
+                if(lastHit == 1) begin
+                    direct_x_ball = -2;
+                end else begin 
+                    direct_x_ball = 2;
+                end
+                //direct_x_ball = 2;
+                direct_y_ball = 2;
+                P1_hit <= 1'b0;
+                P2_hit <= 1'b0;
+                miss <= 1'b0;
                 
             end
         else
           begin
          //check top and bottom
-         if (ball_y_top < 1) //reach top screen
+         if (ball_y_top <= 5) //reach top screen
             begin
             direct_y_ball = BALL_V_P;
             direct_x_ball = delta_x_ball;
             end
-         if (ball_y_bottom > screen_HEIGHT - 1) //reach bottom screen
+         if (ball_y_bottom > screen_HEIGHT - 6) //reach bottom screen
             begin
             direct_y_ball = BALL_V_N;
             direct_x_ball = delta_x_ball;
@@ -264,16 +276,26 @@ module GameLogic(
 //                direct_x_ball = -4;
 //           end
         //miss case
-        else if( ball_x_left <= 1)
+         else if( ball_x_left < 5)
+            begin
+            lastHit <= 0;
+            miss <= 1;
+            P2_hit <= 1;
+            P1_hit <= 0;
+            end
+        else if (ball_x_right > (screen_WIDTH - 6))
+            begin
+            lastHit <= 1;
+            miss <= 1;
+            P1_hit <= 1;
+            P2_hit <= 0;
+            end
+        /*else if( ball_x_left <= 5)
             begin
             miss = 1;
             P2_hit = 1;
-            end
-        else if (ball_x_right > (screen_WIDTH - 1))
-            begin
-            miss = 1;
-            P1_hit = 1;
-            end
+            end*/
+        
             end
           end  
     //P1 paddle
@@ -293,11 +315,11 @@ module GameLogic(
         P1_y_next = P1_y_reg;
         P2_y_next = P2_y_reg;
             if(refresh) begin
-                if(P1_up && (P1_y_top > paddle_delta +paddle_height))
+                if(P1_up && (P1_y_top > paddle_delta ))
                     P1_y_next <= P1_y_reg - paddle_delta;
                 else if (P1_down && (P1_y_bottom <= screen_HEIGHT - paddle_delta))
                     P1_y_next <= P1_y_reg + paddle_delta;
-                if (P2_up && (P2_y_top > paddle_delta+paddle_height))
+                if (P2_up && (P2_y_top > paddle_delta))
                     P2_y_next <= P2_y_reg - paddle_delta;
                 else if (P2_down && (P2_y_bottom <= screen_HEIGHT - paddle_delta ))
                     P2_y_next <= P2_y_reg + paddle_delta;

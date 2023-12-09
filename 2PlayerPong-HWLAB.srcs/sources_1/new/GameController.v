@@ -63,7 +63,7 @@ module GameController(
     GameLogic graphic(P1_up,P1_down,P2_up,P2_down,reset,clk,pix_x
     ,pix_y,gra_still,P1_hit,P2_hit,miss,ball_x,ball_y,P1_y,P2_y);
     //state management
-    always @(posedge clk, posedge reset)
+    always @(posedge clk or posedge reset)
         if(reset)
             begin 
                 present_state = newgame;
@@ -73,22 +73,29 @@ module GameController(
                 present_state = next_state;
             end
     //next state assigned
-    /*initial begin
-        P1_score = 0;
-        P2_score = 0;
+    initial begin
+        P1_score <= 0;
+        P2_score <= 0;
+    end
+    
+    /*always @(present_state) begin
+        if(present_state == newgame) begin
+            P1_score <= 0;
+            P2_score <= 0;
+       end
     end*/
     always @(posedge P1_hit) begin
-        P1_score = P1_score + 1;
+        if(present_state == playing) begin
+         P1_score <= P1_score + 1;
+        end
     end
     
     always @(posedge P2_hit) begin
-        P2_score = P2_score + 1;
+        if(present_state == playing) begin
+        P2_score <= P2_score + 1;
+        end
     end
     
-    /*always @(posedge inclr) begin
-        P1_score = 0;
-        P2_score = 0;
-    end*/
     
     always @*
     begin
@@ -103,8 +110,8 @@ module GameController(
                 begin
                     gra_still = 1'b1;
 //                    inclr = 1'b0;
-                    P1_score = 0;
-                    P2_score = 0;
+                    //P1_score = 0;
+                    //P2_score = 0;
                     if((P1_up == 1) || (P1_down == 1) || (P2_up == 1) || (P2_down == 1))
                         begin 
                         next_state = playing; 
@@ -116,7 +123,10 @@ module GameController(
                     timer_start = 1'b0;
                     if(P1_score == 99 || P2_score == 99) begin next_state = gameover; end
                     else if (miss) //no one reach 99 yet
-                        begin next_state = newball; end
+                        begin 
+                        //gra_still = 1'b1;
+                        next_state = newball; 
+                        end
                 end
            newball:
             //set timer 2 sec
