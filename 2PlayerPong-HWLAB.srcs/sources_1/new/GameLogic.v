@@ -60,8 +60,6 @@ module GameLogic(
     wire [9:0] P2_y_top,P2_y_bottom;
     reg [9:0] P2_y_reg,P2_y_next; //track top y 
     wire P2_on;
-    //paddle counter
-//    reg [18:0] counter = 0;
     
     //initiate ball
     localparam BALL_SIZE = 8; //size 8*8
@@ -75,8 +73,8 @@ module GameLogic(
     reg [9:0] delta_x_ball,delta_y_ball;
 //    reg [9:0] delta_x_ball_next,delta_y_ball_next;
     reg [9:0] direct_x_ball,direct_y_ball; // =delta_next
-    localparam BALL_V_N = -2;
-    localparam BALL_V_P = 2;
+    localparam BALL_V_N = -1;
+    localparam BALL_V_P = 1;
     reg [9:0] hitpoint;
     //mapped-data to make ball
     wire [2:0] rom_addr,rom_col;
@@ -97,17 +95,6 @@ module GameLogic(
    end 
    
    
-//   always @(posedge refresh) begin
-//        if(reset==1'b1 || (counter==0)) begin
-//            counter <= 7'b111_1111;
-//        end
-//        else begin
-//            counter <= counter - 1;
-//        end
-//    end
-    
-   
-    
     
     //rounded the ball
     always @*
@@ -132,13 +119,9 @@ module GameLogic(
                P2_y_reg <= 204;
                ball_x_reg <= 319;
                ball_y_reg <= 239;
-               if(lastHit == 1)begin delta_x_ball <= -2; end
-               else begin  delta_x_ball <= 2; end
-                //move for 2
-               delta_y_ball <= 2;
-               /*P1_hit <= 1'b0;
-               P2_hit <= 1'b0;
-               miss <= 1'b0;*/
+               if(lastHit == 1)begin delta_x_ball <= -1; end
+               else begin  delta_x_ball <= 1; end
+               delta_y_ball <= 1;
             end
         else 
             begin
@@ -183,18 +166,17 @@ module GameLogic(
         direct_x_ball = delta_x_ball;
         direct_y_ball = delta_y_ball;
        
-//        ball_y_center =( ball_y_top + ball_y_bottom ) /2;
-//        ball_x_center =( ball_x_right + ball_x_left ) /2;
         
         if (gra_still) //in playing state
             begin
                 if(lastHit == 1) begin
-                    direct_x_ball = -2;
+                    direct_x_ball = -1;
                 end else begin 
-                    direct_x_ball = 2;
+                    direct_x_ball = 1;
                 end
                 //direct_x_ball = 2;
-                direct_y_ball = 2;
+                direct_y_ball = 1;
+                //
                 P1_hit <= 1'b0;
                 P2_hit <= 1'b0;
                 miss <= 1'b0;
@@ -227,13 +209,6 @@ module GameLogic(
                     direct_y_ball = delta_y_ball;
                     direct_x_ball = BALL_V_P;
                 end  
-        
-//        else if((P1_x_right >= ball_x_left) && (ball_x_left >= P1_x_left) &&
-//                (P1_y_top <= ball_y_bottom) && (ball_y_top <= P1_y_bottom))       // collide with paddle 1
-//            direct_x_ball = 4;                           // move right
-//        else if((P2_x_left <= ball_x_right) && (ball_x_right <= P2_x_right) &&
-//                (P2_y_top <= ball_y_bottom) && (ball_y_top <= P2_y_bottom))       // collide with paddle 2
-//            direct_x_ball = -4;  
         //P1
 //         else if ( (P1_x_right >= ball_x_left) && (ball_x_left >= P1_x_left) &&
 //                (P1_y_top <= ball_y_bottom) && (ball_y_top <= P1_y_bottom))
@@ -290,11 +265,6 @@ module GameLogic(
             P1_hit <= 1;
             P2_hit <= 0;
             end
-        /*else if( ball_x_left <= 5)
-            begin
-            miss = 1;
-            P2_hit = 1;
-            end*/
         
             end
           end  

@@ -33,9 +33,7 @@ module GameController(
     output wire [9:0] P1_y,
     output wire [9:0] P2_y,
     output reg [6:0] P1_score,
-    output reg [6:0] P2_score,
-    output reg gra_still,
-    output reg present_state
+    output reg [6:0] P2_score
     );
     
     //state declaration
@@ -46,103 +44,101 @@ module GameController(
     gameover = 2'b11; //if there's a player whose score has reach 99
     
     //signal
-    reg[1:0] next_state;
-//    reg gra_still;
+    reg[1:0] present_state,next_state;
+    reg gra_still;
     wire P1_hit;
     wire P2_hit;
     wire miss;
-    reg inc1,inc2,inclr;
+    reg inclr;
     //timer set
-    wire timer_tick,timer_up;
+    /*wire timer_tick,timer_up;
     reg timer_start;
     assign timer_tick = (pix_x == 0) && (pix_y==0);
     timer myTimer (clk,reset,timer_tick,timer_start,timer_up);
+    reg [1:0] counter;*/
+    reg isCount;
     
     
     //call
     GameLogic graphic(P1_up,P1_down,P2_up,P2_down,reset,clk,pix_x
     ,pix_y,gra_still,P1_hit,P2_hit,miss,ball_x,ball_y,P1_y,P2_y);
     //state management
-    always @(posedge clk or posedge reset)
-        if(reset)
-            begin 
-                present_state = newgame;
-            end
-        else
-            begin
-                present_state = next_state;
-            end
-    //next state assigned
+    //init state
+    initial begin
+        present_state <= newgame;
+        next_state <= present_state;
+        gra_still <= 1;
+    end
+    //init score
     initial begin
         P1_score <= 0;
         P2_score <= 0;
+        inclr <= 0;
+        isCount <= 0;
     end
-    
-    /*always @(present_state) begin
-        if(present_state == newgame) begin
+    //
+    always @(posedge clk)
+        if(reset)
+            begin 
+                present_state <= newgame;
+            end
+        else
+            begin
+                present_state <= next_state;
+            end
+    //score update
+    always @(posedge P1_hit or posedge reset or posedge inclr) begin
+        if(reset || inclr)
             P1_score <= 0;
+        else if(present_state == playing)
+            P1_score <= P1_score + 1;
+    end
+    
+    always @(posedge P2_hit or posedge reset or posedge inclr) begin
+        if(reset || inclr)
             P2_score <= 0;
-       end
-    end*/
-    always @(posedge P1_hit) begin
-        if(present_state == playing) begin
-         P1_score <= P1_score + 1;
-        end
+        else if(present_state == playing)
+            P2_score <= P2_score + 1;
     end
     
-    always @(posedge P2_hit) begin
-        if(present_state == playing) begin
-        P2_score <= P2_score + 1;
-        end
-    end
-    
-    
-    always @*
+    //next state assigned
+    always @(posedge clk)
     begin
-        next_state = present_state; //default
-        gra_still = 1'b1; //animate the screen or not set to not by default
-//        inc1 <= 1'b0;
-//        inc2 <= 1'b0;
-//        inclr <= 1'b0;
+        gra_still <= 1'b1; //animate the screen or not set to not by default
+        inclr <= 1'b0;
+        next_state <= present_state; //default
         
         case (present_state)
             newgame:
                 begin
-                    gra_still = 1'b1;
-//                    inclr = 1'b0;
-                    //P1_score = 0;
-                    //P2_score = 0;
                     if((P1_up == 1) || (P1_down == 1) || (P2_up == 1) || (P2_down == 1))
                         begin 
-                        next_state = playing; 
+                        next_state <= playing; 
                         end 
                 end
             playing:
                 begin
-                    gra_still = 1'b0;
-                    timer_start = 1'b0;
-                    if(P1_score == 99 || P2_score == 99) begin next_state = gameover; end
-                    else if (miss) //no one reach 99 yet
-                        begin 
-                        //gra_still = 1'b1;
-                        next_state = newball; 
-                        end
-                end
+                    gra_still <= 1'b0;
+                    if(P1_score == 99 || P2_score == 99) begin
+                         if(isCount) begin inclr <= 1'b1; end
+                         else begin isCount <= 1'b1; end
+                         next_state <= gameover;
+                    end
+                    else if (miss && (P1_score < 99) && (P2_score < 99)) begin
+                        next_state <= newball;
+                    end
+               end
            newball:
-            //set timer 2 sec
-            begin
-             gra_still = 1'b1;
-            if(((P1_up != 0) || (P1_down != 0) || (P2_up != 0) || (P2_down != 0))) begin
-                next_state = playing; end
-            end
+                begin
+                    if(((P1_up != 0) || (P1_down != 0) || (P2_up != 0) || (P2_down != 0))) begin
+                        next_state <= playing; end
+                end
            gameover :
-           //set timer 2 sec
-           begin
-            gra_still = 1'b1;
-             if(timer_up)begin
-                next_state = newgame;
-             end 
-           end
+               begin
+                    if(((P1_up != 0) || (P1_down != 0) || (P2_up != 0) || (P2_down != 0))) begin
+                        next_state <= newgame;
+                    end
+               end
         endcase
     end
            
