@@ -51,11 +51,11 @@ module GameController(
     wire miss;
     reg inclr;
     //timer set
-    /*wire timer_tick,timer_up;
+    wire timer_tick,timer_up;
     reg timer_start;
     assign timer_tick = (pix_x == 0) && (pix_y==0);
     timer myTimer (clk,reset,timer_tick,timer_start,timer_up);
-    reg [1:0] counter;*/
+    reg [1:0] counter;
     reg isCount;
     
     
@@ -119,9 +119,13 @@ module GameController(
             playing:
                 begin
                     gra_still <= 1'b0;
+                    timer_start = 1'b0;
                     if(P1_score == 99 || P2_score == 99) begin
-                         if(isCount) begin inclr <= 1'b1; end
-                         else begin isCount <= 1'b1; end
+                         if(timer_up) begin inclr <= 1'b1; end
+                         else begin 
+                            //isCount <= 1'b1;
+                            timer_start = 1'b1;
+                         end
                          next_state <= gameover;
                     end
                     else if (miss && (P1_score < 99) && (P2_score < 99)) begin
