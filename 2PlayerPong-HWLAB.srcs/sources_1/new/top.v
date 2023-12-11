@@ -53,6 +53,7 @@ module top(
     reg [3:0] ballsize;
     reg [3:0] paddlewidth;
     reg [6:0] paddleheight;
+    wire [1:0] present_state;
     wire vga_reset;
     
     assign vga_reset = 1'b0;
@@ -71,7 +72,7 @@ module top(
     InputController inputControl (.clk(clk),.PS2Data(PS2Data),.PS2Clk(PS2Clk),.w(w),.s(s),.up(up),.down(down));
     //
     GameController gameControl (w,s,up,down,reset,clk,x,y,ballx,bally,
-                                    paddlelefty,paddlerighty,P1_score,P2_score);
+                                    paddlelefty,paddlerighty,P1_score,P2_score,present_state);
     //
     vga_sync vga_sync_unit (.clk(clk), .reset(vga_reset), .hsync(hsync), .vsync(vsync),
                                 .video_on(video_on), .p_tick(p_tick), .x(x), .y(y));
@@ -88,7 +89,8 @@ module top(
                                         P2_score,
                                         rgb_reg,
                                         p_tick,
-                                        clk
+                                        clk,
+                                        present_state
                                        );
        // output
         assign rgb = (video_on) ? rgb_reg : 12'b0;

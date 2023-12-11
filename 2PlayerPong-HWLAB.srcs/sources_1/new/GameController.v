@@ -33,7 +33,8 @@ module GameController(
     output wire [9:0] P1_y,
     output wire [9:0] P2_y,
     output reg [6:0] P1_score,
-    output reg [6:0] P2_score
+    output reg [6:0] P2_score,
+    output reg [1:0] present_state
     );
     
     //state declaration
@@ -44,18 +45,18 @@ module GameController(
     gameover = 2'b11; //if there's a player whose score has reach 99
     
     //signal
-    reg[1:0] present_state,next_state;
+    reg[1:0] next_state;
     reg gra_still;
     wire P1_hit;
     wire P2_hit;
     wire miss;
     reg inclr;
     //timer set
-    wire timer_tick,timer_up;
-    reg timer_start;
-    assign timer_tick = (pix_x == 0) && (pix_y==0);
-    timer myTimer (clk,reset,timer_tick,timer_start,timer_up);
-    reg [1:0] counter;
+//    wire timer_tick,timer_up;
+//    reg timer_start;
+//    assign timer_tick = (pix_x == 0) && (pix_y==0);
+//    timer myTimer (clk,reset,timer_start,timer_up);
+    reg [27:0] counter;
     reg isCount;
     
     
@@ -75,6 +76,7 @@ module GameController(
         P2_score <= 0;
         inclr <= 0;
         isCount <= 0;
+        counter <= 0;
     end
     //
     always @(posedge clk)
@@ -86,6 +88,11 @@ module GameController(
             begin
                 present_state <= next_state;
             end
+    always @(posedge clk) begin
+        if(isCount && counter < 28'b1011_1110_1011_1100_0010_0000_0000) begin
+            counter <= counter + 1;
+        end else begin counter <= 0; end
+    end
     //score update
     always @(posedge P1_hit or posedge reset or posedge inclr) begin
         if(reset || inclr)
@@ -119,13 +126,15 @@ module GameController(
             playing:
                 begin
                     gra_still <= 1'b0;
-                    timer_start = 1'b0;
+//                    timer_start = 1'b0;
                     if(P1_score == 99 || P2_score == 99) begin
-                         if(timer_up) begin inclr <= 1'b1; end
-                         else begin 
-                            //isCount <= 1'b1;
-                            timer_start = 1'b1;
-                         end
+//                         if(timer_up) begin inclr <= 1'b1; end
+//                         else begin 
+//                            //isCount <= 1'b1;
+//                            timer_start = 1'b1;
+//                         end
+                         //timer_start = 1'b1;
+                         isCount <= 1'b1;
                          next_state <= gameover;
                     end
                     else if (miss && (P1_score < 99) && (P2_score < 99)) begin
@@ -139,7 +148,13 @@ module GameController(
                 end
            gameover :
                begin
-                    if(((P1_up != 0) || (P1_down != 0) || (P2_up != 0) || (P2_down != 0))) begin
+                    if(counter == 28'b1011_1110_1011_1100_0010_0000_0000) begin 
+                        inclr <= 1'b1;
+                        isCount <= 0;
+//                        next_state <= newgame;
+                    end
+                    if(P1_score == 0 && P2_score == 0) begin
+                        //inclr <= 1'b1;
                         next_state <= newgame;
                     end
                end
